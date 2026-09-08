@@ -43,7 +43,7 @@ def get_formatted_header():
         f" 🌙 <b>التاريخ الهجري :</b> {hijri_str}\n"
         f" ⏰ <b>الساعة (مصر) :</b> {time_str}\n"
         f"❖════════════════════❖\n"
-        f"<center><b>🌷 رضا الرحمن مبتغانا 🌷</b></center>\n"
+        f"<b>🌷 رضا الرحمن مبتغانا 🌷</b>\n"
         f"❖════════════════════❖\n"
     )
     return header
