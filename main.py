@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from hijri_converter import Gregorian
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -38,25 +39,25 @@ def get_formatted_header():
 
     header = (
         f"❖════════════════════❖\n"
-        f" 🗓️ التاريخ الميلادي : {gregorian_str}\n"
-        f" 🌙 التاريخ الهجري : {hijri_str}\n"
-        f" ⏰ الساعة (مصر) : {time_str}\n"
+        f" 🗓️ <b>التاريخ الميلادي :</b> {gregorian_str}\n"
+        f" 🌙 <b>التاريخ الهجري :</b> {hijri_str}\n"
+        f" ⏰ <b>الساعة (مصر) :</b> {time_str}\n"
         f"❖════════════════════❖\n"
-        f" 🌷 رضا الرحمن مبتغانا 🌷\n"
+        f"<center><b>🌷 رضا الرحمن مبتغانا 🌷</b></center>\n"
         f"─── ❖ ───\n"
     )
     return header
 
 
 def generate_full_caption():
-    """بناء النص الكامل للقائمة مع إجبار المحاذاة لليمين باستخدام RLM"""
+    """بناء النص الكامل للقائمة مع إجبار المحاذاة لليمين والتنسيق العريض"""
     caption = get_formatted_header() + "\n"
 
     # 1. قسم أدوار الغاليات
-    caption += f"{RLM}🏷️ أدوار الغاليات :\n"
+    caption += f"{RLM}<b>🏷️ أدوار الغاليات :</b>\n"
     if roles_dict:
         for idx, (u_id, data) in enumerate(roles_dict.items(), 1):
-            user_text = f"{data['name']}"
+            user_text = f"<b>{data['name']}</b>"
             if data['username']:
                 user_text += f" (@{data['username']})"
 
@@ -71,22 +72,28 @@ def generate_full_caption():
     else:
         caption += f"{RLM}لا يوجد أسماء بعد\n"
 
+    # فاصل
+    caption += f"\n{RLM}🍂🍂🍂🍂🍂🍂🍂\n\n"
+
     # 2. قسم المستمعات
-    caption += f"\n{RLM}🏷️ المستمعات:\n"
+    caption += f"{RLM}<b>🏷️ المستمعات:</b>\n"
     if listeners_dict:
         for idx, (u_id, data) in enumerate(listeners_dict.items(), 1):
-            user_text = f"{data['name']}"
+            user_text = f"<b>{data['name']}</b>"
             if data['username']:
                 user_text += f" (@{data['username']})"
             caption += f"{RLM}{idx}-🌸 {user_text}\n"
     else:
         caption += f"{RLM}لا يوجد أسماء بعد\n"
 
+    # فاصل
+    caption += f"\n{RLM}🍂🍂🍂🍂🍂🍂🍂\n\n"
+
     # 3. قسم المعتذرات
-    caption += f"\n{RLM}🏷️ المعتذرات:\n"
+    caption += f"{RLM}<b>🏷️ المعتذرات:</b>\n"
     if excused_dict:
         for idx, (u_id, data) in enumerate(excused_dict.items(), 1):
-            user_text = f"{data['name']}"
+            user_text = f"<b>{data['name']}</b>"
             if data['username']:
                 user_text += f" (@{data['username']})"
             caption += f"{RLM}{idx}-🍂 {user_text}\n"
@@ -95,7 +102,7 @@ def generate_full_caption():
 
     # ختام القائمة
     caption += (
-        "\nكفآرة آلمــجـلس\n\n"
+        "\n<b>كفآرة آلمــجـجلس</b>\n\n"
         "«سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، "
         "أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ»"
     )
@@ -107,7 +114,6 @@ def get_keyboard():
     """توليد الأزرار التفاعلية بناءً على حالة التسجيل"""
     keyboard = []
 
-    # إذا كان التسجيل مفتوحاً يظهر زر سجل اسمي، وإذا تم إيقافه يختفي زر سجل إسمي فقط
     if is_registration_open:
         keyboard.append([
             InlineKeyboardButton("🔘 سجل إسمي", callback_data="register_role"),
@@ -159,7 +165,8 @@ async def startliste(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         generate_full_caption(),
-        reply_markup=get_keyboard()
+        reply_markup=get_keyboard(),
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -171,10 +178,10 @@ async def stopliste(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global is_registration_open
     is_registration_open = False
 
-    # إخفاء زر "سجل إسمي" وتحديث الرسالة السابقة أو إرسال القائمة محدثة
     await update.message.reply_text(
         generate_full_caption(),
-        reply_markup=get_keyboard()
+        reply_markup=get_keyboard(),
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -265,7 +272,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # تحديث الرسالة الحالية
     await query.edit_message_text(
         generate_full_caption(),
-        reply_markup=get_keyboard()
+        reply_markup=get_keyboard(),
+        parse_mode=ParseMode.HTML
     )
 
 
