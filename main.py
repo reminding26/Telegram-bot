@@ -22,6 +22,7 @@ RLM = "\u200f"
 
 # متغيرات حالة القائمة والبيانات في الذاكرة
 is_registration_open = True
+current_session_type = ""  # تخزين اسم الحلقة المختارة
 roles_dict = {}  # {user_id: {"name": str, "username": str, "read": bool, "similar": bool, "meanings": bool}}
 listeners_dict = {}  # {user_id: {"name": str, "username": str}}
 excused_dict = {}  # {user_id: {"name": str, "username": str}}
@@ -37,13 +38,16 @@ def get_formatted_header():
     hijri_str = f"{hijri_date.year} / {hijri_date.month} / {hijri_date.day}"
     time_str = now.strftime("%I:%M %p")
 
+    session_line = f"     {current_session_type}\n" if current_session_type else ""
+
     header = (
         f"❖════════════════════❖\n"
         f" 🗓️ <b>التاريخ الميلادي :</b> {gregorian_str}\n"
         f" 🌙 <b>التاريخ الهجري :</b> {hijri_str}\n"
         f" ⏰ <b>الساعة (مصر) :</b> {time_str}\n"
         f"❖════════════════════❖\n"
-        f"<b>🌷 رضا الرحمن مبتغانا 🌷</b>\n"
+        f"      <b>🌷 رضا الرحمن مبتغانا 🌷</b>\n"
+        f"{session_line}"
         f"❖════════════════════❖\n"
     )
     return header
@@ -73,7 +77,7 @@ def generate_full_caption():
         caption += f"{RLM}لا يوجد أسماء بعد\n"
 
     # فاصل
-    caption += f"\n{RLM}🍂🍂🍂🍂🍂🍂🍂\n\n"
+    caption += f"\n{RLM}🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️\n\n"
 
     # 2. قسم المستمعات
     caption += f"{RLM}<b>🏷️ المستمعات:</b>\n"
@@ -87,7 +91,7 @@ def generate_full_caption():
         caption += f"{RLM}لا يوجد أسماء بعد\n"
 
     # فاصل
-    caption += f"\n{RLM}🍂🍂🍂🍂🍂🍂🍂\n\n"
+    caption += f"\n{RLM}🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️🔹️\n\n"
 
     # 3. قسم المعتذرات
     caption += f"{RLM}<b>🏷️ المعتذرات:</b>\n"
@@ -102,7 +106,7 @@ def generate_full_caption():
 
     # ختام القائمة
     caption += (
-        "\n<b>كفآرة آلمــجـجلس</b>\n\n"
+        "\n<b>كفارة المجلس</b>\n\n"
         "«سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، "
         "أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ»"
     )
@@ -110,8 +114,26 @@ def generate_full_caption():
     return caption
 
 
+def get_session_selection_keyboard():
+    """توليد لوحة اختيار نوع الحلقة عند البدء"""
+    keyboard = [
+        [
+            InlineKeyboardButton("حلقة تدبر", callback_data="set_session_tadabbur"),
+            InlineKeyboardButton("حلقة سرد", callback_data="set_session_sard"),
+        ],
+        [
+            InlineKeyboardButton("حلقة تصحيح تلاوة", callback_data="set_session_tashih"),
+            InlineKeyboardButton("حلقة تجويد", callback_data="set_session_tajweed"),
+        ],
+        [
+            InlineKeyboardButton("حلقة تكرار", callback_data="set_session_tikrar"),
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
 def get_keyboard():
-    """توليد الأزرار التفاعلية بناءً على حالة التسجيل"""
+    """توليد الأزرار التفاعلية القائمة بناءً على حالة التسجيل"""
     keyboard = []
 
     if is_registration_open:
@@ -160,12 +182,15 @@ async def startliste(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ هذا الأمر مخصص لأدمن المجموعة فقط.")
         return
 
-    global is_registration_open
+    global is_registration_open, roles_dict, listeners_dict, excused_dict
     is_registration_open = True
+    roles_dict.clear()
+    listeners_dict.clear()
+    excused_dict.clear()
 
     await update.message.reply_text(
-        generate_full_caption(),
-        reply_markup=get_keyboard(),
+        "🌸 <b>الرجاء اختيار نوع الحلقة لإظهار القائمة:</b>",
+        reply_markup=get_session_selection_keyboard(),
         parse_mode=ParseMode.HTML
     )
 
@@ -190,10 +215,11 @@ async def deleteliste(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ هذا الأمر مخصص لأدمن المجموعة فقط.")
         return
 
-    global roles_dict, listeners_dict, excused_dict, is_registration_open
+    global roles_dict, listeners_dict, excused_dict, is_registration_open, current_session_type
     roles_dict.clear()
     listeners_dict.clear()
     excused_dict.clear()
+    current_session_type = ""
     is_registration_open = True
 
     await update.message.reply_text("🗑️ تم مسح كافة القوائم والأسماء بنجاح. يمكنك البدء بقائمة جديدة.")
@@ -210,6 +236,33 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     full_name = user.first_name + (f" {user.last_name}" if user.last_name else "")
     username = user.username if user.username else ""
     data = query.data
+
+    global current_session_type
+
+    # --- خيارات تحديد نوع الحلقة للأدمن ---
+    if data.startswith("set_session_"):
+        if not await is_admin(update, context):
+            await query.answer("⚠️ هذا الخيار مخصص للأدمن فقط!", show_alert=True)
+            return
+
+        sessions = {
+            "set_session_tadabbur": "🔹️🔹️حلقة تدبر🔹️🔹️",
+            "set_session_sard": "🔹️🔹️ حلقة سرد🔹️🔹️",
+            "set_session_tashih": "🔹️🔹️حلقة تصحيح التلاوة 🔹️🔹️",
+            "set_session_tajweed": "🔹️🔹️حلقة تجويد 🔹️🔹️",
+            "set_session_tikrar": "🔹️🔹️حلقة تكرار 🔹️🔹️",
+        }
+        current_session_type = sessions.get(data, "")
+
+        # تبديل الرسالة للقائمة الرئيسية مباشرة
+        await query.edit_message_text(
+            generate_full_caption(),
+            reply_markup=get_keyboard(),
+            parse_mode=ParseMode.HTML
+        )
+        return
+
+    # --- باقي أزرار القائمة التفاعلية ---
 
     # 1. زر "سجل إسمي"
     if data == "register_role":
