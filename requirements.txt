@@ -1,6 +1,3 @@
-python-telegram-bot
-python-telegram-bot>=20.0
-hijri-converter
-python-telegram-bot>=20.0
-hijri-converter
-pytz
+python-telegram-bot==20.7
+hijridate==2.3.0
+httpx
