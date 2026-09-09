@@ -1,4 +1,33 @@
 import os
+from threading import Thread
+from flask import Flask
+
+# سيرفر وهمي لتجاوز فحص Ports في Render
+app = Flask('')
+
+
+@app.route('/')
+def home():
+  return 'Bot is running alive!'
+
+
+def run():
+  port = int(os.environ.get('PORT', 8080))
+  app.run(host='0.0.0.0', port=port)
+
+
+def keep_alive():
+  t = Thread(target=run)
+  t.daemon = True
+  t.start()
+
+
+# تشغيل السيرفر الوهمي في الخلفية
+keep_alive()
+
+# --- هنا يوضع كود البوت الخاص بك كالمعتاد ---
+
+import os
 import logging
 from datetime import datetime, timezone, timedelta
 from hijridate import Gregorian
